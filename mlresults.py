@@ -21,15 +21,33 @@ def parseExcel(excel_file_name, type):
     return CGs
 
 
-def dumpRawData(MLRs):
+def dumpRawData(MLRs, file_name):
     if (type(MLRs) == 'dict'):
         MLRsList = MLRs.values()
 
-    for MLR in MLRs:
-        pass
-    pass
+    # this assumes that all objects has same label set
+    # so MLRs are result of same dataset with different techniques
+    data_dict = {}
+    data_dict['labels'] = MLRs[0].labels
 
-def dumpResults(MLRs):
+    for MLR in MLRs:
+        # assumes that its supervised ML object, can be later expanded
+        # writerRaw = pd.ExcelWriter(file_name + '.csv');
+        #data.to_excel(writerRaw, MLR.object_name) if you want in separate sheets
+        data_dict[MLR.object_name] = MLR.predictions
+    data = pd.DataFrame(data_dict)
+    data.to_csv(file_name)
+
+def dumpStatsData(MLRs, file_name):
+    if (type(MLRs) == 'dict'):
+        MLRsList = MLRs.values()
+    if not isinstance(MLRs[0], ClassificationResult):
+        print 'Does not support the object type' + str(type(MLRs[0]))
+
+    all_results = []
+    for MLR in MLRs:
+        all_results.append(MLR.result_dict())
+    pd.DataFrame(all_results).to_csv(file_name)
     pass
 
 class MLResultFeatures:
@@ -37,21 +55,22 @@ class MLResultFeatures:
         self.predictions = predictions
 
 class MLResult:
-    def __init__(self, predictions):
+    def __init__(self, predictions, object_name):
         self.predictions = predictions
+        self.object_name = object_name
 
 class SupervisedMLResult(MLResult):
-    def __init__(self, labels, predictions):
-        MLResult.__init__(self, predictions)
+    def __init__(self, labels, predictions, object_name):
+        MLResult.__init__(self, predictions, object_name)
         self.labels = labels
 
     def getCorr(self):
-        corr = pearsonr(self.predictions.values, self.labels.values)[0]
+        corr = pearsonr(self.predictions, self.labels)[0]
         return corr
 
 class RegressionResult(SupervisedMLResult):
-    def __init__(self, labels, predictions):
-        SupervisedMLResult.__init__(self, labels, predictions)
+    def __init__(self, labels, predictions, object_name):
+        SupervisedMLResult.__init__(self, labels, predictions, object_name)
 
     def discretizePredictionsRound(self):
         data = self.predictions
@@ -62,10 +81,9 @@ class RegressionResult(SupervisedMLResult):
         CR = ClassificationResult(data, self.labels)
         return CR
 
-
 class ClassificationResult(SupervisedMLResult):
-    def __init__(self, labels, predictions):
-        SupervisedMLResult.__init__(self, labels, predictions)
+    def __init__(self, labels, predictions, object_name):
+        SupervisedMLResult.__init__(self, labels, predictions, object_name)
 
     # http://scikit-learn.org/stable/modules/generated/sklearn.metrics.confusion_matrix.html
     # By definition a confusion matrix C is such that C_{i, j} is equal to the number of observations known to be in
@@ -87,12 +105,12 @@ class ClassificationResult(SupervisedMLResult):
 
     # http://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_score.html
     def getPrecision(self):
-        precision = precision_score(self.labels, self.predictions)
+        precision = precision_score(self.labels, self.predictions, average = None)
         return precision
 
     # http://scikit-learn.org/stable/modules/generated/sklearn.metrics.recall_score.html
     def getRecall(self):
-        recall = recall_score(self.labels, self.predictions)
+        recall = recall_score(self.labels, self.predictions, average = None)
         return recall
 
     ''' Computes the F1 score of the positive class.
@@ -101,4 +119,47 @@ class ClassificationResult(SupervisedMLResult):
     def getF1Score(self):
         f1_scor = f1_score(self.labels, self.predictions, average=None)
         return f1_scor
+
+    # THESE FUNCTION NEEDS TO BE IMPLEMENTED IN ALL FUNCTIONS ABOVE
+    def result_dict(self):
+        result = {
+            'name': self.object_name,
+            'count': len(self.predictions),
+            'corr': self.getCorr(),
+            'mcr': self.getMCR(),
+            'f1': self.getF1Score(),
+            'precision': self.getPrecision(),
+            'recall': self.getRecall(),
+            'conf_mat': self.getConfusionMat(),
+            'conf_mat_norm': self.getConfusionMatNorm()
+        }
+        return result
+
+    def print_detailed_stats(self):
+        try:
+            print 'Count - ' + str(len(self.predictions))
+            print 'MCR - ' + str(self.getMCR())
+            print 'F1 - ' + str(self.getF1Score())
+            print 'Precision - ' + str(self.getPrecision())
+            print 'Recall - ' + str(self.getRecall())
+            print 'Corr - ' + str(self.getCorr())
+            print 'Confusion Mat'
+            print self.getConfusionMat()
+            print 'Confusion Mat Normalized'
+            print self.getConfusionMatNorm()
+        except:
+            print 'mlresults: Some stats missing due to an error'
+            pass
+
+    def print_aggregate_stats(self):
+        try:
+            print 'Count - ' + str(len(self.predictions))
+            print 'MCR - ' + str(self.getMCR())
+            print 'F1 - ' + str(self.getF1Score())
+            print 'Precision - ' + str(self.getPrecision())
+            print 'Recall - ' + str(self.getRecall())
+            #print 'Corr - ' + str(self.getCorr())
+        except:
+            print 'mlresults: Some stats missing due to an error'
+            pass
     pass

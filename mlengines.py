@@ -62,10 +62,12 @@ def apply_classification_model(X_train, y_train, X_test, y_test, selectModel):
 
     predictions = classifier.predict(Result['X_test'])
     predictions_train = classifier.predict(Result['X_train'])
-    Result['predictions'] = pd.DataFrame(predictions, index=X_test.index, columns=['predictions'])
+    #Result['predictions'] = pd.DataFrame(predictions, index=X_test.index, columns=['predictions'])
+    Result['predictions'] = predictions
     Result['model'] = classifier
     #Result['raw_model'] = pd.Series(classifier.coef_, index = X_train.columns)
-    Result['predictions_train'] = pd.DataFrame(predictions_train, index=X_train.index, columns=['predictions'])
+    #Result['predictions_train'] = pd.DataFrame(predictions_train, index=X_train.index, columns=['predictions'])
+    Result['predictions_train'] = predictions_train
     return Result
 
 def feature_selection_regression(predictors, responses, test_predictors, selectfeattech):
@@ -117,9 +119,11 @@ def apply_regression_model(X_train, y_train, X_test, y_test, selectModel):
         model.fit(X_train, y_train)
         predictions = model.predict(X_test)
         predictions_train = model.predict(X_train)
-    Result['predictions'] = pd.DataFrame(predictions, index=X_test.index, columns=['predictions'])
+    #Result['predictions'] = pd.DataFrame(predictions, index=X_test.index, columns=['predictions'])
+    Result['predictions'] = predictions
     Result['model'] = model
-    Result['predictions_train'] = pd.DataFrame(predictions_train, index=X_train.index, columns=['predictions'])
+    #Result['predictions_train'] = pd.DataFrame(predictions_train, index=X_train.index, columns=['predictions'])
+    Result['predictions_train'] = predictions_train
     return Result
 
 
