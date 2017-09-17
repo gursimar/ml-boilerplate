@@ -15,8 +15,8 @@ import pandas as pd
 
 def feature_selection_class(predictors, responses, test_predictors, selectFeatTech):
     if(selectFeatTech==0):
-        t=int(predictors.shape[1]*0.40)
-        t=10
+        #t=int(predictors.shape[1]*0.40)
+        t=500 # no of features you want to select
         model = SelectKBest(chi2, k=t).fit(predictors.replace(-1,0), responses)
         #print model.scores_
         predictors_new = model.transform(predictors)

@@ -43,7 +43,7 @@ if __name__ == '__main__':
     #Notes:
     # Image size - 32x32 = 1024
 
-    folder_train = '../datasets/digits-uav/trainingDigits/'
+    folder_train = 'datasets/digits-uav/trainingDigits/'
     folder_test = '../testDigits/'
     os.chdir(folder_train)
     train_data = readFiles()
@@ -53,7 +53,16 @@ if __name__ == '__main__':
     print 'Size of train data ' + str(len(train_data['labels']))
     print 'Size of test data ' + str(len(test_data['labels']))
 
+    # select features
+    simar = feature_selection_class(pd.DataFrame(train_data['features']), train_data['labels'],
+                                    pd.DataFrame(test_data['features']), 1)
+    # No of features chosen using randomized lasso - 335 (with similar performance)
 
+    train_data['features'] = simar[0]
+    test_data['features'] = simar[1]
+    print 'Features chosen - ' + str(len(simar[0].columns))
+
+    # Apply models
     train_mlrs = []
     test_mlrs = []
     for model in ['onevsrest', 'linearsvc' ,'decisiontree' ,'nearestcentroid', 'sgd', 'logisticregress']:
@@ -75,12 +84,15 @@ if __name__ == '__main__':
         print ''
 
     # Dump raw data
-    os.chdir('../../../ml-boilerplate/results')
+    os.chdir('../../../results')
     dumpRawData(train_mlrs,'rawdata_train.csv')
     dumpRawData(test_mlrs,'rawdata_test.csv')
 
     # Dump Stats data
     dumpStatsData(train_mlrs,'stats_train.csv')
     dumpStatsData(test_mlrs,'stats_test.csv')
+
+    print 'Performance of the best estimator'
+    print 'The total error rate is ' + str(test_mlrs[1].getMCR()*100) +'%'
 
     # train a classifier without any dimention reduction (just to establish baseline)
